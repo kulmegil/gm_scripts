@@ -6,6 +6,7 @@
 // @updateURL   https://github.com/kulmegil/gm_scripts/raw/master/Wykop.pl_-_odgrzewane_hity/wykop.pl_-_odgrzewane_hity.meta.js
 // @downloadURL https://github.com/kulmegil/gm_scripts/raw/master/Wykop.pl_-_odgrzewane_hity/wykop.pl_-_odgrzewane_hity.user.js
 // @include     http://www.wykop.pl/*
-// @version     1.0.0
+// @version     1.1.0
+// @run-at      document-start
 // @grant       none
 // ==/UserScript==
