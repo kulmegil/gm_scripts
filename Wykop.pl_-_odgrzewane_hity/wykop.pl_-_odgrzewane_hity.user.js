@@ -6,7 +6,7 @@
 // @updateURL   https://github.com/kulmegil/gm_scripts/raw/master/Wykop.pl_-_odgrzewane_hity/wykop.pl_-_odgrzewane_hity.meta.js
 // @downloadURL https://github.com/kulmegil/gm_scripts/raw/master/Wykop.pl_-_odgrzewane_hity/wykop.pl_-_odgrzewane_hity.user.js
 // @include     http://www.wykop.pl/*
-// @version     1.1.0
+// @version     1.1.1
 // @run-at      document-start
 // @grant       none
 // ==/UserScript==
@@ -19,12 +19,13 @@
         if (params.action !== 'index' || params.method !== 'hits' || params.settings.view !== 'list') {return;}
         var navR = $('#site .nav ul:nth-of-type(1)'), navL = $('#site .nav ul:nth-of-type(2)');
             //arch = arch = $('#site .grid-right .sub-menu').first();
-        navL.find('a[href="/hity/dnia/"]').parent().after('<li><a href="/hity/"><span>48h</span></a></li>');
+        navL.find('a[href="/hity/dnia/"]').parent().after('<li><a href="/hity/dnia/?wczoraj"><span>48h</span></a></li>');
         navL.find('a[href*="/hity/roku/"]').parent().after('<li><a href="/hity/roku/6666/"><span>wszystkie</span></a></li>');
         //arch.prepend('<li><a href="/hity/roku/6666/"><i class="fa fa-check-square"></i> wszystkie</a></li>');
-        if (!path[1] || path[1] === 'strona') {
+        //if (!path[1] || path[1] === 'strona') {
+        if (path[1] === 'dnia' && document.location.search.slice(1, 8) === 'wczoraj') {
             navL.children().removeClass('active');
-            navL.find('a[href="/hity/"]').parent().addClass('active');
+            navL.find('a[href="/hity/dnia/?wczoraj"]').parent().addClass('active');
         } else if (path[1] === 'roku' && path[2] === '6666') {
             navL.children().removeClass('active');
             navL.find('a[href*="/hity/roku/6666/"]').parent().addClass('active');
@@ -34,11 +35,15 @@
     }
 
     function fixIndexContent() {
-        if (params.action !== 'index' || params.method !== 'hits' || params.settings.view !== 'list') {return;}
-        if (!path[1] || path[1] === 'strona' || path[1] === 'roku' && path[2] === '6666') {
+        if (params.action !== 'index' || params.method !== 'hits') {return;}
+        if (path[1] === 'dnia' && document.location.search.slice(1, 8) === 'wczoraj' || path[1] === 'roku' && path[2] === '6666') {
             var when = path[2] === '6666'? 'all' : 'yesterday', idx = path.indexOf('strona'),
                 page = idx >= 0? parseInt(path[idx + 1]) : 0;
-            loadSearch({filter: 'links', sort: 'diggs',what: 'promoted', when: when, sort: 'diggs', page: page});
+            if (params.settings.view === 'list') {
+                loadSearch({filter: 'links', sort: 'diggs',what: 'promoted', when: when, sort: 'diggs', page: page});
+            } else if (when === 'all') {
+                 when === 'all' && (document.location = '/hity/tygodnia/');
+            }
         }
     }
 
@@ -76,7 +81,7 @@
         var idx, h = (idx = path.indexOf('ostatnie')) >= 0? parseInt(path[idx + 1]) : params.settings.stream_h;
         if (h > 24) {
             var page = (idx = path.indexOf('strona')) >= 0? parseInt(path[idx + 1]) : 0,
-                when = h === 48 ? 'yesterday' : h === 168 ? 'week' : h === '720' ? 'month' : 'all';
+                when = h === 48 ? 'yesterday' : h === 168 ? 'week' : h === 720 ? 'month' : 'all';
             loadSearch({filter: 'entries', sort: 'votes', when: when, page: page})
         }
     }
@@ -94,10 +99,14 @@
         $('#itemsStream ~ .pager').remove();
         $('#itemsStream')
             .html('<div id="paginationLoader" class="rbl-block space text-center mark-bg dnone" style="display: block;">' +
-                '<i class="fa fa-spinner fa-spin"></i> Ładuję kolejną stronę...</div>')
+                '<i class="fa fa-spinner fa-spin"></i>Ładuję stronę...</div>')
             .load(url + ' #itemsStream > *,.pager', function() {
-                var url = document.location.pathname.replace(/(\/strona\/\d+|\/$)/, '/strona/$i');
-                $('#itemsStream > .pager a').each(function(i, el) {$(el).attr('href', url.replace('$i', i + 1));});
+                // Fix pager
+                var regExp = /(\/strona\/(\d+)\/|\/$)/, match;
+                    url = document.location.pathname.replace(regExp, '/strona/$i/') + document.location.search;
+                $('#itemsStream > .pager a').each(function(i, el) {
+                    el.setAttribute('href', url.replace('$i', (match = el.href.match(regExp))? match[2] : '1'));
+                });
                 $('#itemsStream > .pager').insertAfter('#itemsStream');
                 $.holdReady(false);
         });
